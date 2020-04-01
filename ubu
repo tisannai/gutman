@@ -1,0 +1,19 @@
+#!/usr/bin/guile -s
+!#
+
+(use-modules (ubu))
+
+(define usr-install-path (car (string-split (getenv "GUILE_LOAD_PATH") #\:)))
+
+(ubu-default "install")
+(action install
+        (sh "cp -r lib/gutman.scm" usr-install-path))
+
+(action test-gutman
+        (with-output
+         (sh "cd test; test-gutman")))
+
+(action clean
+        (sh "rm -f test/gutman.log"))
+
+(ubu-run-cli)

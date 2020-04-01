@@ -1,0 +1,207 @@
+#!/usr/bin/guile \
+-s
+!#
+
+(add-to-load-path "../lib")
+
+(use-modules (srfi srfi-64))
+(use-modules (gutman))
+(use-modules (tuile pr))
+(use-modules (tuile utils))
+
+
+(test-begin "gutman")
+
+(define testfile "input/test_file1.txt")
+(define g (gutman-read testfile))
+
+
+;; ------------------------------------------------------------
+;; Test diff jumping commands and their return values:
+
+(test-equal 1 (line))
+(test-equal #f (edited?))
+
+(step)
+(test-equal 2 (line))
+(step -1)
+(test-equal 1 (line))
+(step)
+(test-equal 2 (line))
+(step -1)
+(test-equal 1 (line))
+(line 5)
+(test-equal 5 (line))
+(firstline)
+(test-equal 1 (line))
+(lastline)
+(test-equal 10 (line))
+
+
+;; ------------------------------------------------------------
+;; Test searching:
+
+(firstline)
+(test-equal #t (find "Line 1"))
+(firstline)
+(test-equal #t (find "Line 2"))
+(line 4)
+(test-equal #f (find "Line 3"))
+(firstline)
+(search "Line 1")
+(test-equal 1 (line))
+(search "Line 2")
+(test-equal 2 (line))
+(search "ne 8")
+(search "Line 8")
+
+(let ((l (excursion (lambda ()
+                      (search "Line 9")
+                      (line)))))
+  (test-equal 8 (line))
+  (test-equal 9 l))
+
+(let ((found-it #f))
+  (gutman-catch #f
+                (search "Line 2")
+                (set! found-it #t))
+  (test-equal #f found-it))
+
+(let ((found-it #f))
+  (gutman-catch #f
+                (search "Line 9")
+                (set! found-it #t))
+  (test-equal #t found-it))
+
+
+;; ------------------------------------------------------------
+;; Test content queries:
+
+(firstline)
+(test-equal "Line 1" (get))
+(test-equal "Line 10" (ref 10))
+(test-equal #f (ref 11))
+(test-equal 1 (line))
+(test-equal #("Line 1" "Line 2") (get-range 1 2))
+(test-equal #("Line 1" "Line 2") (get-for 1 2))
+
+
+;; ------------------------------------------------------------
+;; Test content manipulation:
+(let ((l (get)))
+  (set  "foobar")
+  (test-equal "foobar" (get))
+  (set l)
+  (test-equal 10 (linecount))
+
+  (update (lambda (c)
+            (re-sub "ne" c "en")))
+  (test-equal "Lien 1"  (get))
+  (set l))
+
+(insert "Line -1")
+(test-equal 11 (linecount))
+(test-equal "Line -1" (get))
+(remove)
+(test-equal 10  (linecount))
+(test-equal "Line 1"  (get))
+
+(let ((c #("foo" "bar")))
+  (insert c)
+  (test-equal 12 (linecount))
+  (test-equal c (get-range 1 2))
+  (remove 2)
+  (test-equal 10 (linecount))
+
+  (insert-step "foo" 'end)
+  (test-equal "foo" (get))
+  (insert-step "bar" 'after)
+  (test-equal "bar" (get))
+  (test-equal 12 (linecount))
+  (test-equal c (get-range 11 12))
+  (test-equal (linecount) (line))
+  (insert c 'end)
+  (test-equal 14 (linecount))
+  (test-equal c (get-range 13 14))
+  (line 11)
+  (remove 4))
+
+(let ((len (linecount)))
+  (insertfile testfile 'first)
+  (test-equal (* 2 len) (linecount))
+  (insertfile testfile 'end)
+  (test-equal (* 3 len) (linecount)))
+
+(do-all
+ (lambda ()
+   (sub "Line" "foobar")))
+(test-equal #("foobar 5" "foobar 6") (get-range 5 6))
+(blockline)
+(test-equal 30 (line))
+
+(do-range 1 (linecount)
+          (lambda ()
+            (sub "foobar" "Line")))
+(test-equal #("Line 5" "Line 6") (get-range 5 6))
+(blockline)
+(test-equal 30 (linecount))
+(test-equal 30 (line))
+
+(do-for 1 (linecount)
+        (lambda ()
+          (sub "Line" "foobar")))
+(test-equal #("foobar 5" "foobar 6") (get-range 5 6))
+
+
+;; ------------------------------------------------------------
+;; Test misc commands:
+
+(let ((org-lines (lines)))
+  (clear)
+  (test-equal #() (lines))
+  (test-equal #t (edited?))
+
+  (insert org-lines)
+  (mark)
+  (step)
+  (test-equal 2 (line))
+  (unmark)
+  (test-equal 1 (line)))
+
+
+;; ------------------------------------------------------------
+;; Test file saving:
+
+(let ((ofile "output/test_file1.txt")
+      (r2 #f)
+      (r3 #f))
+  (copy ofile)
+
+  (let ((org-lines (lines)))
+    (set! r2 (gutman-read ofile))
+    (gutman-use r2
+                (test-equal org-lines (lines))))
+
+  (set! r3 (gutman-read testfile))
+  (gutman-use r2
+              (lines (gutman-use r3 (lines)))
+              (write-file))
+
+  (test-equal 0 (system (ss "diff " testfile " " ofile)))
+
+  (when (file-exists? ofile)
+    (delete-file ofile)))
+
+
+;; ------------------------------------------------------------
+;; Test Gutman.edit:
+
+(let ((ofile "output/test_file1.txt"))
+  (gutman-edit ofile
+               (insert "foobar"))
+  (gutman-edit ofile
+               (test-equal "foobar" (get)))
+  (when (file-exists? ofile)
+    (delete-file ofile)))
+
+(test-end)
