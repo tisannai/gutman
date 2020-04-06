@@ -40,6 +40,7 @@
             filename
             edit
             edited?
+            within?
             excursion
             mark
             unmark
@@ -408,6 +409,11 @@
 ;; Return true if content is modified.
 (define (edited?)
   (state-edited (guts)))
+
+
+;; Return true if within the lines region.
+(define (within?)
+  (< (line) (linecount)))
 
 
 ;; Execute block, retain current position, and return block value.
