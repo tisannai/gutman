@@ -413,7 +413,7 @@
 
 ;; Return true if within the lines region.
 (define (within?)
-  (< (line) (linecount)))
+  (<= (line) (linecount)))
 
 
 ;; Execute block, retain current position, and return block value.
