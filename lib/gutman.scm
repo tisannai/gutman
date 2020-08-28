@@ -15,6 +15,7 @@
             gutman-use
 
             read-file
+            read-file-content
             write-file
             copy
             line
