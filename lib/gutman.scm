@@ -27,6 +27,7 @@
             get
             ref
             set
+            has
             sub
             update
             insert
@@ -278,6 +279,22 @@
 (define (set text)
   (gs-set-edited! #t)
   (vector-set! (->lines) (->line) text))
+
+
+;; Return non-false if line has the string or regexp.
+;;
+;; args:
+;;   from     String or regexp.
+;;   to       Target string.
+;;   [regexp] From is regexp if #t.
+;;
+(define* (has str-or-re #:key (regexp #f))
+  (cond
+   (regexp
+    (re-match str-or-re (vector-ref (->lines) (->line))))
+   (else
+    (string-contains (vector-ref (->lines) (->line))
+                     str-or-re))))
 
 
 ;; Substitute part of current line content.
