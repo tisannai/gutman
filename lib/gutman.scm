@@ -574,7 +574,7 @@
           (if (string-null? line)
               #f
               line))
-        (vector->list (file->lines filename)))))
+        (file->lines filename))))
 
 
 ;; Take a range of lines.
