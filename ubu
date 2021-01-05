@@ -9,7 +9,7 @@
 (action install
         (sh "cp -r lib/gutman.scm" usr-install-path))
 
-(action test-gutman
+(action test
         (with-output
          (sh "cd test; test-gutman")))
 
