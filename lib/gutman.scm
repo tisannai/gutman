@@ -27,7 +27,7 @@
             get
             ref
             set
-            has
+            has?
             sub
             update
             insert
@@ -55,6 +55,8 @@
             peek-ln
             view
             view-ln
+
+            re
             ))
 
 
@@ -72,8 +74,13 @@
   edited                                ; Edited (dirty) flag.
   )
 
+
+;; Create regexp object.
+(define re make-regexp)
+
 ;; Current Gutman State.
 (define guts (make-parameter #f))
+
 
 ;; Access routines to current Gutman State.
 (define (gs-set-filename!  val) (guts (let ((st (guts))) (set-state-filename!  st val) st)))
@@ -126,12 +133,10 @@
 
 ;; Open existing file for viewing or editing.
 (define (gutman-read filename)
-  (gutman-handle-exception
-   'gutman-fatal
-   (lambda ()
-     (gutman-create-state filename)
-     (read-file)
-     (guts))))
+  (gutman-catch 'gutman-file-error
+                (gutman-create-state filename)
+                (read-file)
+                (guts)))
 
 
 ;; Edit file and also create it if it does not exist. Editing will be
@@ -148,11 +153,16 @@
       ((_ filename body ...)
        #'(begin
            (parameterize ((guts (gutman-create-state filename)))
-             (gutman-catch #f
-                           (when (file-exists? filename)
+             (with-exception-handler (lambda (exn)
+                                       (let* ((loc    (current-source-location))
+                                              (fname  (current-filename)))
+                                         (pr "gutman error: in \"gutman-edit\" at: " fname ":" (1+ (assoc-ref loc 'line)))))
+               (lambda ()
+                 (when (file-exists? filename)
                              (read-file))
                            body ...
-                           (write-file))))))))
+                           (write-file))
+               #:unwind? #t)))))))
 
 
 ;; Create Gutman State for filename.
@@ -288,13 +298,13 @@
 ;;   to       Target string.
 ;;   [regexp] From is regexp if #t.
 ;;
-(define* (has str-or-re #:key (regexp #f))
+(define (has? re-or-str)
   (cond
-   (regexp
-    (re-match str-or-re (vector-ref (->lines) (->line))))
+   ((regexp? re-or-str)
+    (regexp-exec re-or-str (vector-ref (->lines) (->line))))
    (else
     (string-contains (vector-ref (->lines) (->line))
-                     str-or-re))))
+                     re-or-str))))
 
 
 ;; Substitute part of current line content.
@@ -537,22 +547,31 @@
 
 ;; Handle given exception.
 ;;
-;; If exception is #f, the exception will be handled withtout exiting
+;; If exception is #f, the exception will be handled without exiting
 ;; the program.
 (define (gutman-handle-exception exn thunk)
-  (if exn
-      ;; Exit with exception.
-      (with-exception-handler
-          (lambda (exn)
-            (exit 1))
-        thunk
-        #:unwind? #t)
-      ;; Continue with exception.
-      (with-exception-handler
-          (lambda (exn)
-            #t)
-        thunk
-        #:unwind? #t)))
+  (write exn)
+  (newline)
+  ;; Exit with exception.
+  (with-exception-handler
+      (lambda (exn)
+        (cond
+         ((symbol? exn)
+          (case exn
+            ((gutman-file-error)
+             (exit 1))
+            ((gutman-search-error)
+             #f)))
+         ((procedure? exn)
+          (exn))
+         ((not exn)
+          ;; Not handled, since not identified.
+          (raise-exception exn))
+         (else
+          (display "gutman: Some error error")
+          (newline))))
+    thunk
+    #:unwind? #t))
 
 
 ;; Return current line number.
@@ -601,7 +620,7 @@
                                        (values - >= 0))))
       (let ((patcmp (if (string? re-or-str)
                         (lambda (line pat) (string-contains line pat))
-                        (lambda (line pat) (re-match pat line)))))
+                        (lambda (line pat) (regexp-exec pat line)))))
 
         (call/cc
          (lambda (cc)
