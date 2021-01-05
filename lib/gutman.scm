@@ -15,6 +15,7 @@
             gutman-use
 
             read-file
+            read-file-content
             write-file
             copy
             line
@@ -26,6 +27,7 @@
             get
             ref
             set
+            has
             sub
             update
             insert
@@ -279,6 +281,22 @@
   (vector-set! (->lines) (->line) text))
 
 
+;; Return non-false if line has the string or regexp.
+;;
+;; args:
+;;   from     String or regexp.
+;;   to       Target string.
+;;   [regexp] From is regexp if #t.
+;;
+(define* (has str-or-re #:key (regexp #f))
+  (cond
+   (regexp
+    (re-match str-or-re (vector-ref (->lines) (->line))))
+   (else
+    (string-contains (vector-ref (->lines) (->line))
+                     str-or-re))))
+
+
 ;; Substitute part of current line content.
 ;;
 ;; args:
@@ -413,7 +431,7 @@
 
 ;; Return true if within the lines region.
 (define (within?)
-  (< (line) (linecount)))
+  (<= (line) (linecount)))
 
 
 ;; Execute block, retain current position, and return block value.
@@ -556,7 +574,7 @@
           (if (string-null? line)
               #f
               line))
-        (vector->list (file->lines filename)))))
+        (file->lines filename))))
 
 
 ;; Take a range of lines.

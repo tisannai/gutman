@@ -21,6 +21,7 @@
 
 (test-equal 1 (line))
 (test-equal #f (edited?))
+(test-equal #f (not (has "Line 1")))
 
 (step)
 (test-equal 2 (line))
