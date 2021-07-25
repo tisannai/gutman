@@ -550,8 +550,6 @@
 ;; If exception is #f, the exception will be handled without exiting
 ;; the program.
 (define (gutman-handle-exception exn thunk)
-  (write exn)
-  (newline)
   ;; Exit with exception.
   (with-exception-handler
       (lambda (exn)
