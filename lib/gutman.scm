@@ -140,7 +140,7 @@
 
 
 ;; Edit file and also create it if it does not exist. Editing will be
-;; performed in dedicated Gutman State.
+;; performed in dedicated Gutman State within Gutman module.
 ;;
 ;; Example:
 ;;
@@ -152,17 +152,17 @@
     (syntax-case x ()
       ((_ filename body ...)
        #'(begin
-           (use-modules (gutman))
            (parameterize ((guts (gutman-create-state filename)))
              (with-exception-handler (lambda (exn)
                                        (let* ((loc    (current-source-location))
                                               (fname  (current-filename)))
                                          (pr "gutman error: in \"gutman-edit\" at: " fname ":" (1+ (assoc-ref loc 'line)))))
                (lambda ()
-                 (when (file-exists? filename)
-                   (read-file)
-                   body ...
-                   (write-file)))
+                 (eval (quote (when (file-exists? filename)
+                                (read-file)
+                                body ...
+                                (write-file)))
+                       (resolve-module '(gutman))))
                #:unwind? #t)))))))
 
 
