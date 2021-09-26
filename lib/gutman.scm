@@ -152,6 +152,7 @@
     (syntax-case x ()
       ((_ filename body ...)
        #'(begin
+           (use-modules (gutman))
            (parameterize ((guts (gutman-create-state filename)))
              (with-exception-handler (lambda (exn)
                                        (let* ((loc    (current-source-location))
@@ -159,9 +160,9 @@
                                          (pr "gutman error: in \"gutman-edit\" at: " fname ":" (1+ (assoc-ref loc 'line)))))
                (lambda ()
                  (when (file-exists? filename)
-                             (read-file))
-                           body ...
-                           (write-file))
+                   (read-file)
+                   body ...
+                   (write-file)))
                #:unwind? #t)))))))
 
 
