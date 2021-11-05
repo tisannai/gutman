@@ -129,3 +129,293 @@ commands, and finally edits are saved to the file.
 
 Syntax: `(gutman-edit <filename> <commands> ...)`
 
+=== gutman-use
+
+`gutman-use` takes a given gutman-state into use.
+
+Syntax: `(gutman-use <state> <body> ...)`
+
+=== read-file
+
+`read-file` reads lines from given file.
+
+Syntax: `(read-file <filename>)`
+
+=== read-file-content
+
+`read-file-content` reads lines from given file and returns the lines a vector.
+
+Syntax: `(read-file-content <filename>)`
+
+=== write-file
+
+`write-file` writes Gutman content to disk. Write is performed either
+to current file or named file.
+
+Syntax: `(write-file [<filename>])`
+
+=== copy
+
+`copy` writes Gutman content to file.
+
+Syntax: `(copy <filename>)`
+
+=== line
+
+`line` returns or sets the line, if "lineno" argument is given.
+
+Syntax: `(line [<lineno>])`
+
+=== step
+
+`step` steps forward or backward current position. Positive value
+steps forwards and negative value steps backwards.
+
+Syntax: `(step <step>)`
+
+=== firstline
+
+`firstline` sets the current line to first.
+
+Syntax: `(firstline)`
+
+=== lastline
+
+`lastline` sets the current line to last.
+
+Syntax: `(lastline)`
+
+=== blockline
+
+`blockline` jumps to line after block target.
+
+Syntax: `(blockline)`
+
+=== lines
+
+`lines` gets or sets Gutman content.
+
+Syntax: `(lines [<line-content> ...])`
+
+=== get
+
+`get` current line or lines by count. Default count is 1.
+
+Syntax: `(get [<count>])`
+
+=== ref
+
+`ref` returns current line or selected line.
+
+Syntax: `(ref [<lineno>])`
+
+=== set
+
+`set` sets the content of current line.
+
+Syntax: `(set <content>)`
+
+=== has?
+
+`has?` returns non-false if line has the string or regexp.
+
+Syntax: `(has? <str-or-re>)`
+
+=== glue
+
+`glue` joins arguments without a separator.
+
+Syntax: `(glue {<str> ...}|{<str-list>})`
+
+=== join
+
+`join` joins arguments with given separator.
+
+Syntax: `(join <separator> {<str> ...}|{<str-list>})`
+
+=== sub
+
+`sub` substitutes part of current line content.
+
+Syntax: `(sub <from-str-or-re> <to-str>)`
+
+=== update
+
+`update` updates the content of current line using the supplied "proc"
+(line given as argument).
+
+Syntax: `(update <proc>)`
+
+=== insert
+
+`insert` inserts lines and move to insertion position (i.e. line is
+not changed). Position is current line if no position is given.
+
+Position: <num>, 'first, 'after, 'last, 'end.
+
+Syntax: `(insert <none-line-or-lines> [<position>])`
+
+=== insert-step
+
+`insert-step` inserts lines and move to last inserted line. Position
+is current line if no position is given.
+
+Position: <num>, 'first, 'after, 'last, 'end.
+
+Syntax: `(insert-step  <none-line-or-lines>)`
+
+=== remove
+
+`remove` removes current line or number of lines.
+
+Syntax: `(remove [<count>])`
+
+=== insertfile
+
+`insertfile` inserts file to current position.
+
+Syntax: `(insertfile <filename>)`
+
+=== insertfile-step
+
+`insertfile-step` inserts file to current position and steps after it.
+
+Syntax: `(insertfile-step <filename>)`
+
+=== clear
+
+`clear` clears Gutman content and reset current line.
+
+Syntax: `(clear)`
+
+=== find
+
+`find` finds regexp or literal string forwards or backwards. Return
+true on success.
+
+Syntax: `(find <re-or-str>)`
+
+=== search
+
+`search` finds regexp or literal string forwards or backwards. Fail
+with expection (gutman-search-error) if not found.
+
+Syntax: `(search <re-or-str>)`
+
+=== linecount
+
+`linecount` returns line count in Gutman content.
+
+Syntax: `(linecount)`
+
+=== filename
+
+`filename` returns file name of Gutman content.
+
+Syntax: `(filename)`
+
+=== edit
+
+`edit` marks the current content edited.
+
+Syntax: `(edit)`
+
+=== edited?
+
+`edited?` returns true if content has been edited.
+
+Syntax: `(edited?)`
+
+=== within?
+
+`within?` returns true if current line is within the lines region.
+
+Syntax: `(within? ...)`
+
+=== excursion
+
+`excursion` executes "proc" (a thunk), retain current position, and
+return "proc" value.
+
+Syntax: `(excursion <proc>)`
+
+=== mark
+
+`mark` marks (stores) current position to default or to named mark.
+
+Syntax: `(mark <none-or-markname>)`
+
+=== unmark
+
+`unmark` unmarks (restores) current position from default or from
+named mark.
+
+Syntax: `(unmark <none-or-markname>)`
+
+=== do-all
+
+`do-all` executes given block for all lines, i.e. all
+positions. "proc" parameter is Gutman.
+
+Syntax: `(do-all <proc>)`
+
+=== do-range
+
+`do-range` executes given "proc" between start and stop positions, and
+updates position.
+
+Syntax: `(do-range <start> <stop> <proc>)`
+
+=== do-for
+
+`do-for` executes given "proc" starting from start by count, and
+updates position.
+
+Syntax: `(do-for <start> <count> <proc>)`
+
+=== get-range
+
+`get-range` gets lines between start and stop positions inclusive.
+
+Syntax: `(get-range <start> <stop>)`
+
+=== get-for
+
+`get-for` gets lines starting from start by count.
+
+Syntax: `(get-for <start> <count>)`
+
+=== peek
+
+`peek` displays line content around current position (by count or 1).
+
+Syntax: `(peek [<count>])`
+
+=== peek-ln
+
+`peek-on` displays line content (with line numbers) around current
+position (by count or 1).
+
+Syntax: `(peek-ln [<count>])`
+
+=== view
+
+`view` displays line content.
+
+Arguments:
+ * no args:  view all
+ * one arg:  view from current onwards by count
+ * two args: view given range
+
+Syntax: `(view ...)`
+
+=== view-ln
+
+`view-ln` displays line content with line numbers;
+
+Arguments:
+ * no args:  view all
+ * one arg:  view from current onwards by count
+ * two args: view given range
+
+Syntax: `(view-ln ...)`
