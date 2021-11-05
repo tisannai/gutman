@@ -28,6 +28,8 @@
             ref
             set
             has?
+            glue
+            join
             sub
             update
             insert
@@ -306,6 +308,18 @@
    (else
     (string-contains (vector-ref (->lines) (->line))
                      re-or-str))))
+
+
+;; Join strings without separator.
+(define (glue . strings)
+  (apply join (cons "" strings)))
+
+
+;; Join strings with separator.
+(define (join separator . strings)
+  (if (pair? (car strings))
+      (string-join (car strings) separator)
+      (apply string-join (append (list strings) (list separator)))))
 
 
 ;; Substitute part of current line content.

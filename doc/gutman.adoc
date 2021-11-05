@@ -1,0 +1,131 @@
+GUTMAN(3)
+=======
+:doctype: manpage
+
+
+== NAME
+
+GUTMAN - Guile Patch Manipulator
+
+
+== VERSION
+
+GUTMAN v0.1 (2021-11-06)
+
+
+== Overview
+
+{Gutman} (Guile Patch Manipulator) is a library for text file
+patching. It can also be used to extract information from files.
+
+== Documentation
+
+Here is a brief overview of *Gutman*. Please refer to API
+documentation for complete view. Also refer to tests for multiple ways
+of how to use *Gutman*.
+
+Typical *Gutman* script opens files for editing. File is read into the
+library as content line by line. User finds the place for editing
+either with Regexp searches or with direct line numbers. The file
+content is edited by adding, removing, or replacing lines. When all
+edits are done, the updated file content is written to disk.
+
+    (gutman-edit "edit_me.txt"
+                 (line 10)
+                 (delete)
+                 (write))
+
+All editing commands refer to the "current position". Current position
+is returned by "line" method. Positions refer to lines that have
+content. Line numbers start from 1.
+
+If user wants append to the end of file, then user should jump to last
+line and insert text with end attribute.
+
+It is also possible to jump to arbitrary lines, *Gutman* does not
+prevent this. The line positions are just used as an index to vector
+containing the lines. For example negative line number will refer from
+end towards beginning in content.
+
+Position can be explicitly changed with "line", "step", "firstline",
+or "lastline" methods (commands). "find" changes position if the
+pattern is found in selected direction.
+
+    (define curline (line))
+    (if (> curline 5)
+        (step -2)
+        (line 10))
+
+Current line content is returned by "get" and it can be set with
+"set" method. Current line content can be replaced with "sub".
+
+    (set (glue (get) "..."))
+
+Block commands perform commands over a range of lines. Block commands
+are: do-all, do-range, and do-for. These retain the original position,
+but the final position is stored (actually one after) and it can be
+activated by calling "blockline" method, i.e. *Gutman* jumps to that
+line.
+
+Block commands take a pre-defined number of lines to process. Note
+that, if user deletes lines in block action, the outcome is most
+likely not what the user expects.
+
+Mark feature can be used if user wants to return back to original
+position after changes. Mark features includes a "default mark" and
+"named marks".
+
+    (mark 'origin)
+    (step 10)
+    (delete)
+    (unmark 'origin)
+
+For debugging purposes it is good to see line content. "view" and
+"view-ln" can be used to view line content either without or with line
+numbers respectively.
+
+No changes are stored to disk unless "write" is called.
+
+
+== Example session
+
+    ;; Open file for reading.
+    r = Gutman.read( "report.txt" )
+
+    ;; Backup file and find next line with "error", i.e. method chaining.
+    (copy "report.txt.org")
+    (find "error" )
+
+    ;; Collect some lines.
+    (define data (repeat (lambda () (ref (line))) 4))
+
+    ;; Duplicate the lines collected.
+    (insert data)
+
+    ;; Move to line 9.
+    (line 9)
+
+    ;; Append " Hello" to the end of current line.
+    (set (join " " (get) "Hello"))
+
+    ;; Save changes.
+    (write)
+
+
+== Action API
+
+
+=== gutman-read
+
+`gutman-read` reads lines from given file.
+
+Syntax: `(gutman-read <filename> )`
+
+
+=== gutman-edit
+
+`gutman-edit` read lines from given file and executes the included
+commands, and finally edits are saved to the file.
+
+Syntax: `(gutman-edit <filename> <commands> ...)`
+
