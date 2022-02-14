@@ -3,4 +3,3 @@
 (define-module (gutsys edit)
   :use-module (gutman)
   #:re-export (gutman-edit))
-
