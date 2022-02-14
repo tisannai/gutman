@@ -1,6 +1,8 @@
 (define-module (gutman)
   :use-module (tuile pr)
   :use-module (tuile utils)
+  :use-module (tuile record)
+  :use-module (tuile re)
   :use-module (srfi srfi-1)
   :use-module (srfi srfi-9)
   :use-module (srfi srfi-11)
