@@ -149,22 +149,41 @@
 ;;     (gutman-edit "my-file.txt"
 ;;                  (set "Line1"))
 ;;
+;;(define-syntax gutman-edit
+;;  (lambda (x)
+;;    (syntax-case x ()
+;;      ((_ filename body ...)
+;;       #'(begin
+;;           (parameterize ((guts (gutman-create-state filename)))
+;;             (with-exception-handler (lambda (exn)
+;;                                       (let* ((loc    (current-source-location))
+;;                                              (fname  (current-filename)))
+;;                                         (pr "gutman error: in \"gutman-edit\" at: " fname ":" (1+ (assoc-ref loc 'line)))))
+;;               (lambda ()
+;;                 (eval (quote (when (file-exists? filename)
+;;                                (read-file)
+;;                                body ...
+;;                                (write-file)))
+;;                       (resolve-interface '(gutman))))
+;;               #:unwind? #t)))))))
+
+
 (define-syntax gutman-edit
   (lambda (x)
     (syntax-case x ()
       ((_ filename body ...)
        #'(begin
+           (use-modules (gutman))
            (parameterize ((guts (gutman-create-state filename)))
              (with-exception-handler (lambda (exn)
                                        (let* ((loc    (current-source-location))
                                               (fname  (current-filename)))
                                          (pr "gutman error: in \"gutman-edit\" at: " fname ":" (1+ (assoc-ref loc 'line)))))
                (lambda ()
-                 (eval (quote (when (file-exists? filename)
-                                (read-file)
-                                body ...
-                                (write-file)))
-                       (resolve-module '(gutman))))
+                 (when (file-exists? filename)
+                   (read-file)
+                   body ...
+                   (write-file)))
                #:unwind? #t)))))))
 
 
