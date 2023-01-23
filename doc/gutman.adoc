@@ -89,8 +89,9 @@ No changes are stored to disk unless "write" is called.
 
 == Example session
 
+....
     ;; Open file for reading.
-    r = Gutman.read( "report.txt" )
+    (read "report.txt")
 
     ;; Backup file and find next line with "error", i.e. method chaining.
     (copy "report.txt.org")
@@ -110,6 +111,7 @@ No changes are stored to disk unless "write" is called.
 
     ;; Save changes.
     (write)
+....
 
 
 == Action API
@@ -402,10 +404,10 @@ Syntax: `(peek-ln [<count>])`
 
 `view` displays line content.
 
-Arguments:
- * no args:  view all
- * one arg:  view from current onwards by count
- * two args: view given range
+.Arguments:
+* no args:  view all
+* one arg:  view from current onwards by count
+* two args: view given range
 
 Syntax: `(view ...)`
 
@@ -413,9 +415,9 @@ Syntax: `(view ...)`
 
 `view-ln` displays line content with line numbers;
 
-Arguments:
- * no args:  view all
- * one arg:  view from current onwards by count
- * two args: view given range
+.Arguments:
+* no args:  view all
+* one arg:  view from current onwards by count
+* two args: view given range
 
 Syntax: `(view-ln ...)`
