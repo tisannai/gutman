@@ -1,10 +1,9 @@
 (define-module (gutman)
   :use-module (tuile pr)
   :use-module (tuile utils)
-  :use-module (tuile record)
+  :use-module (tuile record-r6rs)
   :use-module (tuile re)
   :use-module (srfi srfi-1)
-  :use-module (srfi srfi-9)
   :use-module (srfi srfi-11)
   :use-module (srfi srfi-43)
   :use-module (ice-9 string-fun)
@@ -68,15 +67,16 @@
 ;; Gutman State.
 
 ;; Internal Gutman State per edited/accessed file.
-(define-mu-record state
-  filename                              ; Gutman file name.
-  lines                                 ; File content as vector of lines.
-  line                                  ; Current line number.
-  mark                                  ; Default mark.
-  marks                                 ; Named marks (hash).
-  blockline                             ; Current block end-line.
-  edited                                ; Edited (dirty) flag.
-  )
+(define-record-type state
+  (fields
+   (mutable filename)               ; Gutman file name.
+   (mutable lines)                  ; File content as vector of lines.
+   (mutable line)                   ; Current line number.
+   (mutable mark)                   ; Default mark.
+   (mutable marks)                  ; Named marks (hash).
+   (mutable blockline)              ; Current block end-line.
+   (mutable edited)                 ; Edited (dirty) flag.
+   ))
 
 
 ;; Create regexp object.
@@ -87,13 +87,13 @@
 
 
 ;; Access routines to current Gutman State.
-(define (gs-set-filename!  val) (guts (let ((st (guts))) (set-state-filename!  st val) st)))
-(define (gs-set-lines!     val) (guts (let ((st (guts))) (set-state-lines!     st val) st)))
-(define (gs-set-line!      val) (guts (let ((st (guts))) (set-state-line!      st val) st)))
-(define (gs-set-mark!      val) (guts (let ((st (guts))) (set-state-mark!      st val) st)))
-(define (gs-set-marks!     val) (guts (let ((st (guts))) (set-state-marks!     st val) st)))
-(define (gs-set-blockline! val) (guts (let ((st (guts))) (set-state-blockline! st val) st)))
-(define (gs-set-edited!    val) (guts (let ((st (guts))) (set-state-edited!    st val) st)))
+(define (gs-set-filename!  val) (guts (let ((st (guts))) (state-filename-set!  st val) st)))
+(define (gs-set-lines!     val) (guts (let ((st (guts))) (state-lines-set!     st val) st)))
+(define (gs-set-line!      val) (guts (let ((st (guts))) (state-line-set!      st val) st)))
+(define (gs-set-mark!      val) (guts (let ((st (guts))) (state-mark-set!      st val) st)))
+(define (gs-set-marks!     val) (guts (let ((st (guts))) (state-marks-set!     st val) st)))
+(define (gs-set-blockline! val) (guts (let ((st (guts))) (state-blockline-set! st val) st)))
+(define (gs-set-edited!    val) (guts (let ((st (guts))) (state-edited-set!    st val) st)))
 
 
 
