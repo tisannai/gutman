@@ -2,12 +2,13 @@
 !#
 
 (use-modules (ubu))
+(use-modules (ubu-lib path))
 (use-modules (ubu-lib adoc))
 
 (set "adoc-prog-name" "gutman")
 
 
-(define usr-install-path (car (string-split (getenv "GUILE_LOAD_PATH") #\:)))
+(define usr-install-path (get "user-install-path"))
 
 (ubu-default "install")
 (action install
