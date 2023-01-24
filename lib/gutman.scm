@@ -11,6 +11,7 @@
   #:export (
             gutman-read
             gutman-edit
+            gutman-edit2
             gutman-catch
             gutman-raise
             gutman-use
@@ -143,15 +144,7 @@
                 (guts)))
 
 
-;; Edit file and also create it if it does not exist. Editing will be
-;; performed in dedicated Gutman State within Gutman module.
-;;
-;; Example:
-;;
-;;     (gutman-edit "my-file.txt"
-;;                  (set "Line1"))
-;;
-(define-syntax gutman-edit
+(define-syntax old-gutman-edit
   (lambda (x)
     (syntax-case x ()
       ((_ filename body ...)
@@ -168,6 +161,33 @@
                    body ...
                    (write-file)))
                #:unwind? #t)))))))
+
+
+;; Edit file and also create it if it does not exist. Editing will be
+;; performed in dedicated Gutman State within Gutman module.
+;;
+;; Example:
+;;
+;;     (gutman-edit "my-file.txt"
+;;                  (set "Line1"))
+;;
+(define-syntax gutman-edit
+  (lambda (x)
+    (syntax-case x ()
+      ((_ filename body ...)
+       #'(eval '(begin
+                  (parameterize ((guts (gutman-create-state filename)))
+                    (with-exception-handler (lambda (exn)
+                                              (let* ((loc    (current-source-location))
+                                                     (fname  (current-filename)))
+                                                (pr "gutman error: in \"gutman-edit\" at: " fname ":" (1+ (assoc-ref loc 'line)))))
+                      (lambda ()
+                        (when (file-exists? filename)
+                          (read-file)
+                          body ...
+                          (write-file)))
+                      #:unwind? #t)))
+               (resolve-module '(gutman)))))))
 
 
 ;; Create Gutman State for filename.
