@@ -14,6 +14,7 @@
             gutman-catch
             gutman-raise
             gutman-use
+            gutman-set
 
             read-file
             read-file-content
@@ -179,14 +180,14 @@
   (lambda (x)
     (syntax-case x ()
       ((_ filename body ...)
-       #'(eval '(begin
-                  (parameterize ((guts (gutman-create-state filename)))
+       #`(eval `(begin
+                  (parameterize ((guts (gutman-create-state ,#'filename)))
                     (with-exception-handler (lambda (exn)
                                               (let* ((loc    (current-source-location))
                                                      (fname  (current-filename)))
                                                 (pr "gutman error: in \"gutman-edit\" at: " fname ":" (1+ (assoc-ref loc 'line)))))
                       (lambda ()
-                        (when (file-exists? filename)
+                        (when (file-exists? ,#'filename)
                           (read-file)
                           body ...
                           (write-file)))
@@ -220,6 +221,15 @@
        #'(parameterize ((guts use-guts))
            body ...)))))
 
+
+(define-syntax gutman-set
+  (lambda (x)
+    (syntax-case x ()
+      ((_ var value)
+       #`(begin
+           (module-define! (resolve-module '(gutman))
+                           #,(datum->syntax x (list 'quote (syntax->datum #'var)))
+                           value))))))
 
 
 ;; ------------------------------------------------------------
