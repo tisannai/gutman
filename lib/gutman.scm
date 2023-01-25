@@ -11,7 +11,6 @@
   #:export (
             gutman-read
             gutman-edit
-            gutman-edit2
             gutman-catch
             gutman-raise
             gutman-use
@@ -165,6 +164,11 @@
 
 ;; Edit file and also create it if it does not exist. Editing will be
 ;; performed in dedicated Gutman State within Gutman module.
+;;
+;; NOTE: We must use eval if we want to make sure that the lexical
+;; context where "gutman-edit" appears does not include the bindings
+;; from the context. There are only bindings of gutman itself
+;; available.
 ;;
 ;; Example:
 ;;

@@ -5,6 +5,8 @@
 (use-modules (ubu-lib path))
 (use-modules (ubu-lib adoc))
 
+(path-refresh)
+
 (set "adoc-prog-name" "gutman")
 
 
