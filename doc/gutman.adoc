@@ -10,7 +10,7 @@ GUTMAN - Guile Patch Manipulator
 
 == VERSION
 
-GUTMAN v0.1 (2021-11-06)
+GUTMAN v0.2 (2023-01-25)
 
 
 == Overview
@@ -90,8 +90,11 @@ No changes are stored to disk unless "write" is called.
 == Example session
 
 ....
+    ;; Use module.
+    (use-modules (gutman core))
+
     ;; Open file for reading.
-    (read "report.txt")
+    (gutman-read "report.txt")
 
     ;; Backup file and find next line with "error", i.e. method chaining.
     (copy "report.txt.org")
@@ -127,9 +130,31 @@ Syntax: `(gutman-read <filename> )`
 === gutman-edit
 
 `gutman-edit` read lines from given file and executes the included
-commands, and finally edits are saved to the file.
+commands, and finally edits are saved to the file. Commands are
+executed in the lexical scope (see: `gutman-inside-edit` for other
+options).
 
 Syntax: `(gutman-edit <filename> <commands> ...)`
+
+
+=== gutman-inside-edit
+
+`gutman-inside-edit` read lines from given file and executes the
+included commands, and finally edits are saved to the file. Commands
+are executed with `(gutman core)` module and hence there are no naming
+space conflicts (see: `gutman-edit` for other options). If the user
+wants to bind variables which get values from the lexical scope, use
+`gutman-inside-set`.
+
+Syntax: `(gutman-inside-edit <filename> <commands> ...)`
+
+=== gutman-inside-set
+
+`gutman-inside-set` bind variable for `(gutman core)` module to
+value. This is used with `gutman-inside-edit` to pass variable
+values for the commands to reference.
+
+Syntax: `(gutman-inside-set <var> <value>)`
 
 === gutman-use
 

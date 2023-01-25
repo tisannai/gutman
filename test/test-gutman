@@ -2,10 +2,10 @@
 -s
 !#
 
-(add-to-load-path "../lib")
+(add-to-load-path "..")
 
 (use-modules (srfi srfi-64))
-(use-modules (gutman))
+(use-modules (gutman core))
 (use-modules (tuile pr))
 (use-modules (tuile utils))
 (use-modules (tuile re))

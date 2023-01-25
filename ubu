@@ -16,8 +16,7 @@
 (action install
         (adoc-build-man)
         (adoc-install-man)
-        (sh "cp -r lib/gutman.scm" usr-install-path)
-        (sh "cp -r gutsys" usr-install-path))
+        (sh "cp -r gutman" usr-install-path))
 
 (action test
         (with-output

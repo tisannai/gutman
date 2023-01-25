@@ -1,4 +1,4 @@
-(define-module (gutman)
+(define-module (gutman core)
   :use-module (tuile pr)
   :use-module (tuile utils)
   :use-module (tuile record-r6rs)
@@ -11,10 +11,11 @@
   #:export (
             gutman-read
             gutman-edit
+            gutman-inside-edit
             gutman-catch
             gutman-raise
             gutman-use
-            gutman-set
+            gutman-inside-set
 
             read-file
             read-file-content
@@ -87,6 +88,18 @@
 (define guts (make-parameter #f))
 
 
+;; Create Gutman State for filename.
+(define (gutman-create-state filename)
+  (guts (make-state filename
+                  (vector)
+                  0
+                  #f
+                  (make-hash-table)
+                  #f
+                  #f))
+  (guts))
+
+
 ;; Access routines to current Gutman State.
 (define (gs-set-filename!  val) (guts (let ((st (guts))) (state-filename-set!  st val) st)))
 (define (gs-set-lines!     val) (guts (let ((st (guts))) (state-lines-set!     st val) st)))
@@ -97,10 +110,15 @@
 (define (gs-set-edited!    val) (guts (let ((st (guts))) (state-edited-set!    st val) st)))
 
 
-
 ;; ------------------------------------------------------------
 ;; User entry functions:
 
+
+(define (gutman-exception-handler-default exn)
+  (cond
+   ((eq? exn 'gutman-file-error) #f)
+   ((eq? exn 'gutman-search-error) #f)
+   (else (raise-exception exn))))
 
 ;; Catch/handle Gutman Exception.
 ;;
@@ -137,6 +155,11 @@
 
 
 ;; Open existing file for viewing or editing.
+;;
+;; Example:
+;;
+;;     (define gs (gutman-read "my-file.txt"))
+;;
 (define (gutman-read filename)
   (gutman-catch 'gutman-file-error
                 (gutman-create-state filename)
@@ -144,32 +167,27 @@
                 (guts)))
 
 
-(define-syntax old-gutman-edit
-  (lambda (x)
-    (syntax-case x ()
-      ((_ filename body ...)
-       #'(begin
-           (use-modules (gutman))
-           (parameterize ((guts (gutman-create-state filename)))
-             (with-exception-handler (lambda (exn)
-                                       (let* ((loc    (current-source-location))
-                                              (fname  (current-filename)))
-                                         (pr "gutman error: in \"gutman-edit\" at: " fname ":" (1+ (assoc-ref loc 'line)))))
-               (lambda ()
-                 (when (file-exists? filename)
-                   (read-file)
-                   body ...
-                   (write-file)))
-               #:unwind? #t)))))))
+;; (define-syntax old-gutman-edit
+;;   (lambda (x)
+;;     (syntax-case x ()
+;;       ((_ filename body ...)
+;;        #'(begin
+;;            (parameterize ((guts (gutman-create-state filename)))
+;;              (with-exception-handler (lambda (exn)
+;;                                        (let* ((loc    (current-source-location))
+;;                                               (fname  (current-filename)))
+;;                                          (pr "gutman error: in \"gutman-edit\" at: " fname ":" (1+ (assoc-ref loc 'line)))))
+;;                (lambda ()
+;;                  (when (file-exists? filename)
+;;                    (read-file)
+;;                    body ...
+;;                    (write-file)))
+;;                #:unwind? #t)))))))
 
 
 ;; Edit file and also create it if it does not exist. Editing will be
-;; performed in dedicated Gutman State within Gutman module.
-;;
-;; NOTE: We must use eval if we want to make sure that the lexical
-;; context where "gutman-edit" appears does not include the bindings
-;; from the context. There are only bindings of gutman itself
-;; available.
+;; performed in the lexical scope, which means that there could be
+;; name conflicts.
 ;;
 ;; Example:
 ;;
@@ -180,31 +198,78 @@
   (lambda (x)
     (syntax-case x ()
       ((_ filename body ...)
-       #`(eval `(begin
-                  (parameterize ((guts (gutman-create-state ,#'filename)))
-                    (with-exception-handler (lambda (exn)
-                                              (let* ((loc    (current-source-location))
-                                                     (fname  (current-filename)))
-                                                (pr "gutman error: in \"gutman-edit\" at: " fname ":" (1+ (assoc-ref loc 'line)))))
-                      (lambda ()
-                        (when (file-exists? ,#'filename)
-                          (read-file)
-                          body ...
-                          (write-file)))
-                      #:unwind? #t)))
-               (resolve-module '(gutman)))))))
+       (syntax (begin
+                 (parameterize ((guts (gutman-create-state filename)))
+                   (with-exception-handler gutman-exception-handler-default
+                     (lambda ()
+                       (when (file-exists? filename)
+                         (read-file)
+                         body ...
+                         (write-file)))
+                     #:unwind? #t))))))))
 
 
-;; Create Gutman State for filename.
-(define (gutman-create-state filename)
-  (guts (make-state filename
-                  (vector)
-                  0
-                  #f
-                  (make-hash-table)
-                  #f
-                  #f))
-  (guts))
+;; Edit file and also create it if it does not exist. Editing will be
+;; performed inside dedicated Gutman State within the Gutman module,
+;; which prevents name conflicts.
+;;
+;; NOTE: We must use eval if we want to make sure that the lexical
+;; context where "gutman-inside-edit" appears does not include the bindings
+;; from the context. There are only bindings of gutman itself
+;; available.
+;;
+;; Example:
+;;
+;;     (gutman-edit "my-file.txt"
+;;                  (set "Line1"))
+;;
+(define-syntax gutman-inside-edit
+  (lambda (x)
+    (syntax-case x ()
+      ((_ filename body ...)
+       (quasisyntax (eval `(begin
+                             (parameterize ((guts (gutman-create-state ,(syntax filename))))
+                               (with-exception-handler gutman-exception-handler-default
+                                 (lambda ()
+                                   (when (file-exists? ,(syntax filename))
+                                     (read-file)
+                                     body ...
+                                     (write-file)))
+                                 #:unwind? #t)))
+                          (resolve-module '(gutman core))))))))
+
+
+;; (define-syntax gutman-inside-edit-2
+;;   (lambda (x)
+;;     (syntax-case x ()
+;;       ((_ filename body ...)
+;;        #`(eval `(begin
+;;                   (parameterize ((guts (gutman-create-state ,#'filename)))
+;;                     (with-exception-handler (lambda (exn)
+;;                                               (let* ((loc    (current-source-location))
+;;                                                      (fname  (current-filename)))
+;;                                                 (pr "gutman error: in \"gutman-edit\" at: " fname ":" (1+ (assoc-ref loc 'line)))))
+;;                       (lambda ()
+;;                         (when (file-exists? ,#'filename)
+;;                           (read-file)
+;;                           body ...
+;;                           (write-file)))
+;;                       #:unwind? #t)))
+;;                (resolve-module '(gutman core)))))))
+;; 
+;; 
+;; (define-syntax gutman-inside-edit-old
+;;   (lambda (x)
+;;     (syntax-case x ()
+;;       ((_ filename body ...)
+;;        #`(eval `(begin
+;;                   (parameterize ((guts (gutman-create-state ,#'filename)))
+;;                     (when (file-exists? ,#'filename)
+;;                       (read-file)
+;;                       body ...
+;;                       (write-file))
+;;                     #:unwind? #t))
+;;                (resolve-module '(gutman core)))))))
 
 
 ;; Use the given Gutman State.
@@ -222,12 +287,12 @@
            body ...)))))
 
 
-(define-syntax gutman-set
+(define-syntax gutman-inside-set
   (lambda (x)
     (syntax-case x ()
       ((_ var value)
        #`(begin
-           (module-define! (resolve-module '(gutman))
+           (module-define! (resolve-module '(gutman core))
                            #,(datum->syntax x (list 'quote (syntax->datum #'var)))
                            value))))))
 
@@ -242,7 +307,7 @@
     (if (file-exists? filename)
         (gs-set-lines! (read-file-content filename))
         (gutman-raise 'gutman-file-error
-                      (ss "File not found: " filename)))))
+                      (ss "File not found: \"" filename "\"")))))
 
 
 ;; Write Gutman content to disk.
