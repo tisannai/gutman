@@ -1,9 +1,10 @@
 #!/usr/bin/env ti-guile
 !#
 
-(use-modules (ubu))
+(use-modules (ubu core))
 (use-modules (ubu-lib path))
 (use-modules (ubu-lib adoc))
+(use-modules (tuile pr))
 
 (path-refresh)
 
@@ -14,8 +15,9 @@
 
 (ubu-default "install")
 (action install
-        (adoc-build-man)
-        (adoc-install-man)
+;;         (adoc-build-man)
+;;         (adoc-install-man)
+;;         (ppre usr-install-path)
         (sh "cp -r gutman" usr-install-path))
 
 (action test

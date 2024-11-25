@@ -11,7 +11,9 @@
   #:export (
             gutman-read
             gutman-edit
+            gutman-visit
             gutman-inside-edit
+            gutman-inside-trial
             gutman-catch
             gutman-raise
             gutman-use
@@ -209,6 +211,20 @@
                      #:unwind? #t))))))))
 
 
+(define-syntax gutman-visit
+  (lambda (x)
+    (syntax-case x ()
+      ((_ filename body ...)
+       (syntax (begin
+                 (parameterize ((guts (gutman-create-state filename)))
+                   (with-exception-handler gutman-exception-handler-default
+                     (lambda ()
+                       (when (file-exists? filename)
+                         (read-file)
+                         body ...))
+                     #:unwind? #t))))))))
+
+
 ;; Edit file and also create it if it does not exist. Editing will be
 ;; performed inside dedicated Gutman State within the Gutman module,
 ;; which prevents name conflicts.
@@ -223,6 +239,8 @@
 ;;     (gutman-edit "my-file.txt"
 ;;                  (set "Line1"))
 ;;
+
+#;
 (define-syntax gutman-inside-edit
   (lambda (x)
     (syntax-case x ()
@@ -237,6 +255,50 @@
                                      (write-file)))
                                  #:unwind? #t)))
                           (resolve-module '(gutman core))))))))
+
+(define-syntax gutman-inside-edit
+  (lambda (x)
+    (syntax-case x ()
+      ((_ filename body ...)
+       (quasisyntax (eval `(begin
+                             (parameterize ((guts (gutman-create-state ,(syntax filename))))
+                               (with-exception-handler gutman-exception-handler-default
+                                 (lambda ()
+                                   (when (file-exists? ,(syntax filename))
+                                     (read-file)
+                                     (eval )
+                                     body ...
+                                     (write-file)))
+                                 #:unwind? #t)))
+                          (resolve-module '(gutman core))))))))
+
+;; (define-syntax gutman-inside-edit
+;;   (lambda (x)
+;;     (syntax-case x ()
+;;       ((_ filename body ...)
+;;        (let ((the-filename (syntax->datum #'filename)))
+;;          (ppre the-filename)
+;;          (quasisyntax (eval `(begin
+;;                                  (parameterize ((guts (gutman-create-state ,(datum->syntax x (eval (syntax->datum filename)
+;;                                                                                                    (interaction-environment))))))
+;;                                    (with-exception-handler gutman-exception-handler-default
+;;                                      (lambda ()
+;;                                        (when (file-exists? ,(datum->syntax x (eval (syntax->datum filename)
+;;                                                                                    (interaction-environment))))
+;;                                          (read-file)
+;;                                          body ...
+;;                                          (write-file)))
+;;                                      #:unwind? #t)))
+;;                               (resolve-module '(gutman core)))))))))
+
+(define-syntax gutman-inside-trial
+  (lambda (x)
+    (syntax-case x ()
+      ((_ filename body ...)
+       (let ((the-filename (primitive-eval (syntax->datum #'filename))))
+         (ppre the-filename)
+         #'(ppre the-filename)
+         )))))
 
 
 ;; (define-syntax gutman-inside-edit-2
